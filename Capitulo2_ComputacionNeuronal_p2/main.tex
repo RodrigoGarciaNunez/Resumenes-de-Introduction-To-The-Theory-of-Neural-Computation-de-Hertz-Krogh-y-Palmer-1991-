@@ -1,0 +1,143 @@
+\documentclass{article}
+\usepackage{graphicx} % Required for inserting images
+\usepackage{authblk} 
+\usepackage{amsmath} 
+
+\title{Resumen del Capítulo 2 de “Introduction To The Theory of Neural Computation” de Hertz, Krogh y Palmer (1991).}
+\author{Rodrigo García Núñez}
+\affil{Universidad Autónoma Metropolitana }
+\date{Febrero 2025}
+
+\begin{document}
+
+\maketitle
+
+\section{Capacidad de Almacenamiento}
+
+Retomando el capitulo 2 del texto y continuando con la sección de capacidad de almacenamiento.
+\\
+Tomando en cuenta la siguiente expresión
+\begin{equation}
+    C_i^v \equiv  -\epsilon_i^v (1/N)\sum_j\sum_{\mu\neq v}\epsilon_i^mu\epsilon_j^\mu\epsilon_j^v
+    \label{eq:condición de estabilidad}
+\end{equation}
+\\
+Esto solo son $-\epsilon_i^v$ veces el término de interferencia en la regla de estabilidad. Si $C_i^v$ es negativo, entonces el término de interferencia tiene el mismo signo que el patrón deseado $\epsilon_i^v$, por lo que no afecta. Por otro lado, si $C_i^v$ sí es positivo, y mayor que 1, entonces sí cambiará el signo de $h_i^v$ y vuelve al patrón de la unidad $i$ inestable. Si se inicia la red en estado de memoria deseado $\epsilon_i^v$, no se quedará ahí.
+\\\\
+Ahora, es momento de considerar patrones aleatorios, con igual probabilidad de que $\epsilon_i^v$ sea +1 o -1. Con esto, podemos estimar la probabilidad de que un patrón arbitrario sea inestable. A esta probabilidad la llamamos $P_{error}$ y la representamos de la siguiente forma:
+\begin{equation}
+    P_{error} =Prob (C_i^v > 1)
+    \label{eq:P_{error}}
+\end{equation}
+\\
+Nótese que $P_{error}$ aumenta cuando incrementamos la cantidad de p patrones que queremos almacenar en la red. Para encontrar la máxima cantidad de patrones que podemos almacenar en una red, debemos adoptar un criterio de aceptación de rendimiento, por ejemplo $P_{error} < 0.01$.
+\\\\
+Cómo se puede apreciar, $P_{error}$ depende de la cantidad de unidades $N$ y $p$, el número de patrones que queremos almacenar. Ahora $C_i^v$ es $1/N$ veces la suma de $Np$ números aleatorios, en donde es igual de posible que sean +1 o -1, como una distribución binomial con promedio 0 y una varianza $\sigma² = p/N$. Sin embargo, asumimos que p y N son grandes, esto podemos aproximarlo como una distribución Gaussiana, con promedio y varianza iguales, como se muestra en la figura 1.
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=0.5\textwidth]{images/distribusiónGauss.png}
+\caption{Distribución de los valores del término de interferencia $C_i^v$. Para $p$ patrones aleatorios y $N$ unidades, se obtiene una distribución Gaussiana con varianza $\sigma² = p/N$. Lo sombreado es la probabilidad de error por bit.}
+\label{fig:Espacio de soluciones}
+\end{figure}
+\\\\
+Nótese que la probabilidad $P_{error}$ en la que $C_i^v$ sobrepasa el valor de 1 se encuentra sombreada en la figura 1. Dicho esto, para calcular  $P_{error}$ utilizamos la siguiente fórmula
+
+\begin{equation}
+    P_{error} = 1/\sqrt{2\pi\sigma²} \int_1^\infty e^{-x²/2\sigma²}dx = 1/2 [1-erf(1/\sqrt{2 \sigma²})] = 1/2 [1-erf(\sqrt{N/2p})]
+    \label{eq:P_{error}}
+\end{equation}
+En donde la \textbf{Función de error} está definida por
+
+\begin{equation}
+    erf(x) \equiv 2/\sqrt{\pi} \int_0^x exp(-u²) du
+    \label{eq:función de error}
+\end{equation}
+\\
+
+La siguiente tabla muestra los valores de $p/N$ para varios valores de $P_{error}$. Por ejemplo, si tomamos el criterio de que $P_{error} < 0.01$, entonces tendríamos que $p_{max} = 0.15N$. Este cálculo nos dice la estabilidad inicial del modelo. Por ejemplo, si tomamos que $p < 0.185N$, entonces aproximadamente el 1\% de los bits iniciales serán inestables. Esto, aunque parece inofensivo, podría tener el efecto de que si iniciamos desde un patrón $\epsilon_i^v$ y el 1\% de los bits se invierten, entonces podría pasar que algunos otros bits más se inviertan también. En el peor de los casos, puede ocurrir un fenómeno de avalancha en el que cada vez más bits se invierten y el sistema termine en un estado desconocido.
+Dicho esto, se puede notar que los valores presentes en la tabla 1 son valores elevados, por lo que se necesitan valores más pequeños para mantener una estabilidad aceptable en el modelo.
+\begin{table}[]
+    \centering
+        \begin{tabular}{|c|l|r|}
+        \hline
+            $P_{error}$ & $p_{max}/N$ \\
+        \hline
+            0.001 & 0.105 \\
+            0.0036 & 0.138 \\
+            0.01 & 0.185 \\
+            0.05 & 0.37 \\
+            0.1 & 0.61 \\ 
+        \hline
+        \end{tabular}
+    \caption{Valores de $P_{error}$ con su respectivo valor de $p_{max}/N$}
+    \label{tab1}
+\end{table}
+\\\\
+
+Una definición alternativa de la capacidad de almacenamiento insiste en que la mayoría de los patrones sean recuperados perfectamente. Dado que cada patrón consta de N bits, necesitamos que $P_{error} < 0.01/N$ para que los N bits sean recuperados correctamente con un 99\% de probabilidad. Esto implica que $p/N \xrightarrow[]{}{0}$ mientras que $N \xrightarrow[]{}{\infty}$, así que se usa la expansión asintótica de la función de error, tal que
+
+\begin{equation}
+    1- erf(x) \xrightarrow[]{}{e^{-x²}/\sqrt{\pi x}} \text{ (cuando } x \xrightarrow[]{}{\infty})
+    \label{eq:expansión asintótica}
+\end{equation}
+\\
+para obtener que
+\begin{equation}
+    log(P_{error}) \approx -log2 -  N/2P -(1/2)log\pi- (1/2)log(N/2p)
+    \label{eq:lol}
+\end{equation}
+\\
+De modo que la condición $P_{error} < 0.01/N$ se convierte en
+\begin{equation}
+    -log2 -  N/2P -(1/2)log\pi- (1/2)log(N/2p) < log0.01 - logN
+    \label{eq:condición P_{error}}
+\end{equation}
+\\pero, si solo nos concentramos en los términos principales para un $N$ grande
+\begin{equation}
+    N/2P > log N
+    \label{eq:condición P_{error}2}
+\end{equation}
+Tal que el mayor número de patrones que se pueden almacenar en este caso es $p_{max}= N/2 log N$.
+Si fuéramos más estrictos y decidiéramos que queremos que todos los patrones sean perfectamente recuperables, entonces necesitaríamos recuperar $Np$ bits correctamente con, al menos, 99\% de probabilidad, y también que $P_{error} < 0.01/pN$. Entonces la expresión 8 cambia a
+\begin{equation}
+    N/2P > log(Np)
+    \label{eq:condición P_{error}3}
+\end{equation}
+\\
+lo que indica que $p_{max} = N/4 log N$ debido a que $log(Np) \sim log N^{2} = 2 log N$. Nótese que se asume que para los casos de perfecta recuperación que los $C_i^v$ son independientes de un orden.
+\\\\
+En resumen, la capacidad de almacenamiento $p_{max}$ es proporcional a N, más nunca es mayor a 0.138N, si es que estamos dispuestos a aceptar un pequeño porcentaje de error en cada patrón, pero si insistimos en que la mayoría de los patrones sean perfectamente recuperables, entonces $p_{max}$ es proporcional a $N/log N$.
+\\\\
+Sin embargo, en la vida real los patrones no son generalmente aleatorios. El modelo Hopfield se estudia con patrones aleatorios por conveniencia matemática; sin embargo, también hay casos en los que los patrones están correlacionados. Pero, para el caso en el que los patrones son ortogonales (sus productos escalares son iguales a 0), entonces no se tiene ningún tipo de interferencia, tal que $C_i^v = 0$ para todo patrón $v$ y unidad $i$.
+\begin{equation}
+    \sum_j\epsilon_j^\mu\epsilon_j^v = 0 \text{ para todo   } \mu \neq v\\
+    \label{eq:condición P_{error}3}
+\end{equation}
+\\
+En estos casos, la capacidad de memoria $p_{max}$ sería igual a N porque a lo mucho se pueden construir N cadenas de bits mutuamente ortogonales de tamaño N. Sin embargo, la memoria útil tiende a ser más pequeña. Si intentamos guardar N patrones ortogonales con la regla de Hebb, todos los estados resultan estables; el sistema se queda en donde empieza, dando como resultado un modelo inútil como memoria. Esto pasa porque las condiciones de ortogonalidad tienden a
+\begin{equation}
+    w_{ij} =
+    \begin{cases}
+        1, & \text{si } i = j \\
+        0, & \text{de otro modo}
+    \end{cases}
+    \label{eq. wij}
+\end{equation}
+\\
+tal que cada unidad está conectada solo a sí misma. Para poder obtener una medida de la capacidad $p_{max}$, es necesario sugerir una zona de atracción finita alrededor de cada patrón deseado. Esto nos da una capacidad útil ligeramente menor que N.
+
+\begin{equation}
+    H = -1/2 \sum_{ij} w_{ij} S_iS_j 
+    \label{eq. wij}
+\end{equation}
+\section{Bibliografía}
+\begin{thebibliography}{9}
+
+\bibitem{John H., Anders K. y Richard G. P. (1992)} John H., Anders K. y Richard G. P. (1992). Introduction to the theory of Neural
+Computation (pp. 17 - 20). CRC Press.
+
+
+\end{thebibliography}
+
+\end{document}
